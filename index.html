@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eu te amo há:</title>
+  <style>
+    :root {
+      --bg: #0d47a1;
+      --fg: #ffffff;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      position: relative;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 350px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0.5rem 0 1rem 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .slideshow {
+      width: 100%;
+      height: 0;
+      padding-bottom: 100%;
+      overflow: hidden;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .slideshow img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    .slideshow img.active {
+      opacity: 1;
+    }
+
+    .timer {
+      font-weight: 700;
+      font-size: 1.8rem;
+      margin: 1rem auto 0 auto;
+      padding: 0.5rem 1rem;
+      border: 2px solid #ffffff;
+      border-radius: 12px;
+      display: inline-block;
+      background-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 10px #64b5f6, 0 0 20px #42a5f5;
+      animation: glowPulse 2s infinite alternate;
+      z-index: 1;
+      cursor: pointer; /* indica que pode clicar */
+    }
+
+    @keyframes glowPulse {
+      0% { transform: scale(1); box-shadow: 0 0 5px #64b5f6, 0 0 10px #42a5f5; }
+      50% { transform: scale(1.05); box-shadow: 0 0 15px #64b5f6, 0 0 30px #42a5f5; }
+      100% { transform: scale(1); box-shadow: 0 0 5px #64b5f6, 0 0 10px #42a5f5; }
+    }
+
+    .stitch {
+      width: 120px;
+      height: auto;
+      opacity: 0.9;
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      animation: floatStitch 3s ease-in-out infinite;
+      z-index: 10;
+    }
+
+    @keyframes floatStitch {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0); }
+    }
+
+    /* Responsividade */
+    @media (max-width: 480px) {
+      .wrap {
+        max-width: 90%;
+      }
+      h1 {
+        font-size: 1rem;
+      }
+      .timer {
+        font-size: 1.4rem;
+        padding: 0.4rem 0.8rem;
+      }
+      .stitch {
+        width: 80px;
+        bottom: 10px;
+        right: 10px;
+      }
+    }
+
+    /* Animações corações e estrelas */
+    @keyframes float {
+      0% { transform: translate(0,0) scale(1) rotate(0deg); opacity:1; }
+      100% { transform: translate(var(--x), var(--y)) scale(var(--scale)) rotate(var(--rotate)); opacity:0; }
+    }
+
+    .effect {
+      position: absolute;
+      pointer-events: none;
+      font-size: 1.5rem;
+      animation: float 1.5s forwards;
+    }
+
+    .heart { color: #ff4081; }
+    .star { color: #fff59d; }
+
+    /* Estilo degradê preto para azul do popup */
+    #lovePopup {
+      font-weight: bold;
+      background: linear-gradient(to right, #000000, #2196f3);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      font-size: 3rem;
+      text-align: center;
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      display: none; /* começa invisível */
+      transition: transform 0.5s ease, opacity 0.5s ease;
+    }
+
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Eu te amo há:</h1>
+    <div class="slideshow" id="slideshow">
+      <img src="Imagem1.jpg" class="active" alt="foto 1">
+      <img src="Imagem2.jpg" alt="foto 2">
+      <img src="Imagem3.jpg" alt="foto 3">
+      <img src="Imagem4.jpg" alt="foto 4">
+      <img src="Imagem5.jpg" alt="foto 5">
+    </div>
+    <div class="timer" id="timer">--:--:--</div>
+    <img src="stitch.png" alt="Stitch" class="stitch">
+
+    <!-- Popup central -->
+    <div id="lovePopup">EU TE AMO 💙</div>
+
+    <!-- Container para animações -->
+    <div id="effectsContainer" style="position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:101;"></div>
+  </main>
+
+  <script>
+    // Timer
+    const inicio = new Date('2025-06-12T23:00:00-03:00');
+    const el = document.getElementById('timer');
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      const agora = new Date();
+      let diffMs = agora - inicio;
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const days = Math.floor(totalSeconds / (24*3600));
+      const hours = Math.floor((totalSeconds % (24*3600)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      el.textContent = days + ' Dias ' + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    // Slideshow
+    const slides = document.querySelectorAll('#slideshow img');
+    let current = 0;
+    setInterval(() => {
+      slides[current].classList.remove('active');
+      current = (current + 1) % slides.length;
+      slides[current].classList.add('active');
+    }, 3000);
+
+    // Efeito popup com corações e estrelas otimizado
+    const popup = document.getElementById('lovePopup');
+    const effectsContainer = document.getElementById('effectsContainer');
+
+    const poolSize = 30;
+    const pool = [];
+    for(let i=0; i<poolSize; i++){
+      const div = document.createElement('div');
+      div.className = 'effect';
+      div.style.display = 'none';
+      effectsContainer.appendChild(div);
+      pool.push(div);
+    }
+
+    function getEffectFromPool() {
+      for(const el of pool){
+        if(el.style.display === 'none') return el;
+      }
+      return null;
+    }
+
+    el.addEventListener('click', () => {
+      // Mostrar popup
+      popup.style.display = 'block';
+      popup.style.transform = 'translate(-50%, -50%) scale(1)';
+      popup.style.opacity = '1';
+
+      setTimeout(() => {
+        popup.style.transform = 'translate(-50%, -50%) scale(0)';
+        popup.style.opacity = '0';
+        setTimeout(() => { popup.style.display = 'none'; }, 500);
+      }, 2000);
+
+      // Posição central para efeitos
+      const popupRect = popup.getBoundingClientRect();
+      const centerX = popupRect.left + popupRect.width/2;
+      const centerY = popupRect.top + popupRect.height/2;
+
+      for(let i=0; i<12; i++){
+        const effect = getEffectFromPool();
+        if(!effect) continue;
+
+        const isHeart = Math.random() < 0.6;
+        effect.className = 'effect ' + (isHeart ? 'heart' : 'star');
+        effect.textContent = isHeart ? '💖' : '✨';
+        effect.style.left = centerX + 'px';
+        effect.style.top = centerY + 'px';
+
+        const dx = (Math.random()*200 - 100) + 'px';
+        const dy = (-150 - Math.random()*150) + 'px';
+        const scale = (0.5 + Math.random()*0.7);
+        const rotate = (Math.random()*360 - 180) + 'deg';
+        const duration = 1 + Math.random();
+
+        effect.style.setProperty('--x', dx);
+        effect.style.setProperty('--y', dy);
+        effect.style.setProperty('--scale', scale);
+        effect.style.setProperty('--rotate', rotate);
+        effect.style.animationDuration = duration + 's';
+
+        effect.style.display = 'block';
+        setTimeout(() => { effect.style.display = 'none'; }, duration*1000);
+      }
+    });
+  </script>
+</body>
+</html>
